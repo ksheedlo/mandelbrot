@@ -16,6 +16,33 @@ int32_t mandelbrot_series(double complex x, double *result){
     return SET_MEMBER;
 }
 
+void *render_worker(void *threadarg){
+    /* Local variable optimizations. */
+    renderarg *arg = (renderarg *)threadarg;
+    rectd_t *rect = arg->rect;
+    size_t width = arg->width, height = arg->height;
+    int32_t ylo = arg->ylow, yhi = arg->yhigh;
+    int32_t (*cfunc)(int32_t, double) = arg->colorfunc;
+    int32_t *pixbuf = arg->pixbuf;
+
+    double rmax = rect->x + rect->width;
+    double imax = rect->y + rect->height;
+    double rmin = rect->x;
+    double real_factor = (rmax - rect->x) / (width - 1);
+    double imag_factor = (imax - rect->y) / (height - 1);
+
+    for(int32_t y = ylo; y < yhi; y++){
+        for(int32_t x = 0; x < width; x++){
+            double result = 0;
+            double complex c = (rmin + (x * real_factor)) + 
+                ((imax - (y * imag_factor)) * I);
+            int32_t iterations = mandelbrot_series(c, &result);
+            pixbuf[y*width + x] = cfunc(iterations, result);
+        }
+    }
+    return NULL;
+}
+
 void render(int32_t *pixbuf, size_t width, size_t height, rectd_t *rect,
         int32_t (*colorfunc)(int32_t, double)){
     double rmax = rect->x + rect->width;
@@ -212,6 +239,10 @@ int main(int argc, char **argv){
     int width = 1250;
     int height = 1000;
     int flags = 0;
+    int32_t nthreads = MBT_DEFTHREADS;
+    pthread_t *threads;
+    renderarg *rargs;
+    pthread_attr_t attr;
 
 #ifdef PNG_CAPABLE
     int32_t output_format = OUTPUT_PNG;
@@ -302,7 +333,43 @@ int main(int argc, char **argv){
         return 1;
     }
 
+#if 0
     render(pixbuf, width, height, &rect, color_bgy);
+#endif
+    /* TODO: Determine the best possible number of threads */
+    threads = alloca(nthreads * sizeof(pthread_t));
+    rargs = alloca(nthreads * sizeof(renderarg));
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    for(int k = 0; k < nthreads; k++){
+        /* spawn a new joinable render worker thread */
+        rargs[k].pixbuf = pixbuf;
+        rargs[k].rect = &rect;
+        rargs[k].colorfunc = color_bgy;
+        rargs[k].width = width;
+        rargs[k].height = height;
+        rargs[k].ylow = k*(height / nthreads);
+        if((k+1) != nthreads){
+            rargs[k].yhigh = (k+1)*(height / nthreads);
+        }else{
+            rargs[k].yhigh = height;
+        }
+        int rc;
+        if((rc = pthread_create(&threads[k], &attr, render_worker, rargs + k))){
+            fprintf(stderr, "Error: pthread_create returned %d\n", rc);
+            return 1;
+        }
+    }
+    pthread_attr_destroy(&attr);
+    for(int k = 0; k < nthreads; k++){
+        int rc;
+        void *status;
+        if((rc = pthread_join(threads[k], &status))){
+            fprintf(stderr, "Error: pthread_join returned %d\n", rc);
+            return 1;
+        }
+    }
+    
 #ifdef PNG_CAPABLE
     if(output_format == OUTPUT_PNG){
         write_png(pixbuf, filename, width, height);

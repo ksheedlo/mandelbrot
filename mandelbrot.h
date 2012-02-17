@@ -8,6 +8,8 @@
 #include<string.h>
 #include<math.h>
 #include<complex.h>
+#include<pthread.h>
+#include<alloca.h>
 
 #define PNG_CAPABLE 1
 
@@ -56,7 +58,12 @@
 #define OUTPUT_PNG  0
 #define OUTPUT_MBT  1
 
-#define _MIN(a,b)        ((a) < (b) ? (a) : (b))
+#define MBT_MINTHREADS  1
+#define MBT_MAXTHREADS  64
+#define MBT_DEFTHREADS  2
+
+#define _MIN(a,b)       ((a) < (b) ? (a) : (b))
+#define _MAX(a,b)       ((a) < (b) ? (b) : (a))
 
 typedef struct {
     double x, y, width, height;
@@ -67,10 +74,21 @@ typedef union {
     int32_t color;
 } color_u;
 
+typedef struct {
+    int32_t *pixbuf;
+    rectd_t *rect;
+    int32_t (*colorfunc)(int32_t, double);
+    size_t width;
+    size_t height;
+    int32_t ylow, yhigh;
+} renderarg;
+
 int32_t mandelbrot_series(double complex x, double *result);
 
 void render(int32_t *pixbuf, size_t width, size_t height, rectd_t *rect,
     int32_t (*colorfunc)(int32_t, double));
+
+void *render_worker(void *threadarg);
 
 int32_t color_bw(int32_t iterations, double z);
 

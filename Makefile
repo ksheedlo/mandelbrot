@@ -1,6 +1,6 @@
 CC=gcc
 PKG_CONFIG=$(shell pkg-config --libs --cflags opencv)
-LIBS=-I/usr/include/opencv -lcv -lhighgui -lm 
+LIBS=-I/usr/include/opencv -lcv -lhighgui -lm -pthread
 CFLAGS=-O3 -funroll-loops -Wall -Wno-unused-function -Wno-unused-value -std=gnu99 
 
 all: mandelbrot
