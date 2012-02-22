@@ -40,8 +40,8 @@
 #define NCOLORS_BGY     8192
 #define BGY_DENSITY     (NCOLORS_BGY / ((double)MAX_ITERATIONS + 1))
 #define BGY_OFFSET      280
-#define BGY_GRN_OFFSET  340
-#define BGY_YLW_OFFSET  360
+#define BGY_GRN_OFFSET  300
+#define BGY_YLW_OFFSET  320
 #define BGY_TOP         8000
 
 #define W_SET   1
