@@ -159,6 +159,46 @@ int32_t color_bgy(int32_t iterations, double z){
     return (b << 16) | (g << 8) | r;
 }
 
+int32_t color_blueorange(int32_t iterations, double z){
+    if(iterations == SET_MEMBER){
+        return BLACK;
+    }
+    int32_t r = 0, g = 0, b = 0;
+    double v = iterations - (log(log(z) / log(4)) / log(2));
+    int32_t color = (int32_t)(v * BLORG_DENSITY);
+
+    for(int32_t x = 0; x < NCOLORS_BLORG; x += 1024){
+        int32_t dr = 0, dg = 0, db = 0;
+        int32_t dxr = color - (x + 660), dxg = color - (x + 569), 
+            dxb = color - (x + 442);
+        
+        dr = (376 * 85577) / (85577 + dxr*dxr) - 111;
+        dg = (256 * 19918) / (19918 + dxg*dxg);
+        db = (257 * 19997) / (19997 + dxb*dxb);
+
+        /* Saturate dr, dg, db */
+        dr = _MAX(_MIN(dr,0xFF),0);
+        dg = _MAX(_MIN(dg,0xFF),0);
+        db = _MAX(_MIN(db,0xFF),0);
+
+        /* Add into accumulators. */
+        r += dr;
+        g += dg;
+        b += db;
+    }
+    int32_t white = color - NCOLORS_BLORG;
+    white = 2550000 / (10000 + (white*white));
+    r += white;
+    g += white;
+    b += white;
+
+    r = _MIN(r,0xFF);
+    g = _MIN(g,0xFF);
+    b = _MIN(b,0xFF);
+    
+    return (b << 16) | (g << 8) | r;
+}
+
 #ifdef PNG_CAPABLE
 void write_png(int32_t *pixbuf, const char *filename, size_t width, size_t height){
     CvSize size;
@@ -345,7 +385,7 @@ int main(int argc, char **argv){
         /* spawn a new joinable render worker thread */
         rargs[k].pixbuf = pixbuf;
         rargs[k].rect = &rect;
-        rargs[k].colorfunc = color_bgy;
+        rargs[k].colorfunc = color_blueorange;
         rargs[k].width = width;
         rargs[k].height = height;
         rargs[k].ylow = k*(height / nthreads);

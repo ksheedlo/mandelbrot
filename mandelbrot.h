@@ -44,6 +44,9 @@
 #define BGY_YLW_OFFSET  320
 #define BGY_TOP         8000
 
+#define NCOLORS_BLORG   8192
+#define BLORG_DENSITY   (NCOLORS_BLORG / ((double)MAX_ITERATIONS + 1))
+
 #define W_SET   1
 #define H_SET   2
 #define P_SET   4
@@ -93,6 +96,10 @@ void *render_worker(void *threadarg);
 int32_t color_bw(int32_t iterations, double z);
 
 int32_t color_red(int32_t iterations, double z);
+
+int32_t color_bgy(int32_t iterations, double z);
+
+int32_t color_blueorange(int32_t iterations, double z);
 
 #ifdef PNG_CAPABLE
 void write_png(int32_t *pixbuf, const char *filename, size_t width, size_t height);
