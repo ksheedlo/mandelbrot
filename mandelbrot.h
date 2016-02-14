@@ -9,8 +9,6 @@
 #include<math.h>
 #include<complex.h>
 
-#define PNG_CAPABLE 1
-
 #ifdef PNG_CAPABLE
 #include<cv.h>
 #include<highgui.h>
@@ -80,7 +78,7 @@ int32_t color_red(int32_t iterations, double z);
 void write_png(int32_t *pixbuf, const char *filename, size_t width, size_t height);
 #endif
 
-void rgba_to_bgr(void *rgba, void *bgr, size_t bytes);
+void rgba_to_bgr(int32_t *rgba, char *bgr, size_t bytes);
 
 void write_mbt(int32_t *pixbuf, const char *filename, size_t width, size_t height);
 
